@@ -36,7 +36,7 @@ export const AnalyticsPage: React.FC = () => {
           setUserUrls(urlRes.data);
 
           const initialTargetId =
-            urlIdParam && urlRes.data.some((u) => u._id === urlIdParam)
+            urlIdParam && urlRes.data.some((u: UrlItem) => u._id === urlIdParam)
               ? urlIdParam
               : urlRes.data[0]._id;
 
