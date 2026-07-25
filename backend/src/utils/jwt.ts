@@ -1,0 +1,44 @@
+import jwt from 'jsonwebtoken';
+import { Response, CookieOptions } from 'express';
+import { env } from '../config/env';
+
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  role: 'user' | 'admin';
+}
+
+export const generateAccessToken = (payload: JwtPayload): string => {
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    expiresIn: '15m',
+  });
+};
+
+export const generateRefreshToken = (payload: JwtPayload): string => {
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    expiresIn: '7d',
+  });
+};
+
+export const verifyAccessToken = (token: string): JwtPayload => {
+  return jwt.verify(token, env.JWT_ACCESS_SECRET) as JwtPayload;
+};
+
+export const verifyRefreshToken = (token: string): JwtPayload => {
+  return jwt.verify(token, env.JWT_REFRESH_SECRET) as JwtPayload;
+};
+
+export const refreshCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+export const setRefreshCookie = (res: Response, token: string): void => {
+  res.cookie('refreshToken', token, refreshCookieOptions);
+};
+
+export const clearRefreshCookie = (res: Response): void => {
+  res.clearCookie('refreshToken', refreshCookieOptions);
+};

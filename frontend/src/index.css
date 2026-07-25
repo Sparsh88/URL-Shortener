@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-100 dark:bg-black text-slate-900 dark:text-zinc-100 antialiased overflow-x-hidden transition-colors duration-300;
+  }
+
+  /* Headings & Text */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-slate-900 dark:text-white font-bold tracking-tight;
+  }
+
+  p {
+    @apply text-slate-700 dark:text-zinc-300;
+  }
+}
+
+/* Glassmorphism & Animated Dynamic Components */
+.glass-panel {
+  @apply bg-white dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200 dark:border-zinc-800 shadow-md dark:shadow-2xl text-slate-900 dark:text-zinc-100 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-zinc-900/80 hover:border-brand-500/40 dark:hover:border-brand-500/40;
+}
+
+.glass-card {
+  @apply bg-slate-50 dark:bg-zinc-900/50 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 shadow-sm text-slate-900 dark:text-zinc-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-500/30;
+}
+
+.glass-input {
+  @apply bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 shadow-sm transition-all duration-200;
+}
+.glass-input:focus {
+  border-color: #6366f1;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Smooth Fade & Slide In Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glow Effect Utilities */
+.hover-glow {
+  transition: all 0.3s ease-out;
+}
+.hover-glow:hover {
+  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 dark:bg-black;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-zinc-800 rounded-full transition-colors;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-zinc-700;
+}
