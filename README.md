@@ -8,7 +8,7 @@ Designed as a portfolio project to demonstrate full-stack development, REST API 
 
 ## 🚀 Live Demo
 
-🌐 **Frontend:** https://url-shortener-2nk1-three.vercel.app
+🌐 **Frontend:** https://url-shortener-theta-drab.vercel.app
 
 ⚙️ **Backend API:** https://url-shortener-8gr3.onrender.com
 
