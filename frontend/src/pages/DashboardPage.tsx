@@ -245,7 +245,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Action buttons & filters */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start sm:justify-end">
             <button
               onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${

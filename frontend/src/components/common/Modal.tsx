@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -58,11 +58,11 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`relative w-full ${widthClass} glass-panel rounded-2xl shadow-2xl overflow-hidden z-10`}
+            className={`relative w-full ${widthClass} glass-panel rounded-2xl shadow-2xl overflow-hidden z-10 my-auto max-h-[88vh] flex flex-col`}
           >
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-zinc-800 flex-shrink-0">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white truncate">{title}</h3>
                 <button
                   onClick={onClose}
                   className="p-1 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
@@ -71,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
                 </button>
               </div>
             )}
-            <div className="p-6">{children}</div>
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">{children}</div>
           </motion.div>
         </div>
       )}

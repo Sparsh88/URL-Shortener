@@ -71,174 +71,328 @@ export const UrlTable: React.FC<UrlTableProps> = ({
   }
 
   return (
-    <div className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/80 dark:bg-slate-900/60 text-xs font-semibold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
-              <th className="py-3.5 px-4 w-10 text-center">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={handleSelectAll}
-                  className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                />
-              </th>
-              <th className="py-3.5 px-4">Title & Short Code</th>
-              <th className="py-3.5 px-4">Destination</th>
-              <th className="py-3.5 px-4">Clicks</th>
-              <th className="py-3.5 px-4">Badges & Tags</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50 text-sm">
-            {urls.map((url) => {
-              const shortUrl = `${import.meta.env.VITE_SHORT_BASE_URL || 'http://localhost:5000/r'}/${url.customAlias || url.shortCode}`;
-              const isSelected = selectedUrlIds.includes(url._id);
+    <div className="space-y-4">
+      {/* Mobile Card View (visible on small screens) */}
+      <div className="block md:hidden space-y-3">
+        <div className="flex items-center justify-between px-2 text-xs text-slate-600 dark:text-zinc-400 font-semibold">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={handleSelectAll}
+              className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+            />
+            <span>Select All ({urls.length})</span>
+          </label>
+        </div>
 
-              return (
-                <tr
-                  key={url._id}
-                  className={`hover:bg-slate-100/70 dark:hover:bg-slate-800/40 transition-colors ${
-                    isSelected ? 'bg-brand-500/10 dark:bg-brand-500/5' : ''
+        {urls.map((url) => {
+          const shortUrl = `${import.meta.env.VITE_SHORT_BASE_URL || 'http://localhost:5000/r'}/${url.customAlias || url.shortCode}`;
+          const isSelected = selectedUrlIds.includes(url._id);
+
+          return (
+            <div
+              key={url._id}
+              className={`p-4 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 space-y-3 transition-all ${
+                isSelected ? 'ring-2 ring-brand-500 bg-brand-500/5' : ''
+              }`}
+            >
+              {/* Header: Select + Title + Favorite */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start space-x-2.5 overflow-hidden">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelectUrl(url._id)}
+                    className="mt-1 w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 flex-shrink-0"
+                  />
+                  <div className="overflow-hidden">
+                    <p className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                      {url.title || url.shortCode}
+                    </p>
+                    <div className="flex items-center space-x-2 mt-0.5">
+                      <a
+                        href={shortUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1 truncate"
+                      >
+                        <span>/{url.customAlias || url.shortCode}</span>
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      </a>
+                      <button
+                        onClick={() => handleCopy(url.customAlias || url.shortCode, url._id)}
+                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white flex-shrink-0"
+                      >
+                        {copiedId === url._id ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => onToggleFavorite(url)}
+                  className={`p-1.5 rounded-lg text-slate-400 hover:text-amber-500 flex-shrink-0 ${
+                    url.isFavorite ? 'text-amber-500 fill-amber-500' : ''
                   }`}
                 >
-                  {/* Select Checkbox */}
-                  <td className="py-4 px-4 text-center">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelectUrl(url._id)}
-                      className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                    />
-                  </td>
+                  <Star className="w-4 h-4" />
+                </button>
+              </div>
 
-                  {/* Title & Short Link */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-start space-x-2">
-                      <button
-                        onClick={() => onToggleFavorite(url)}
-                        className={`mt-0.5 text-slate-400 hover:text-amber-500 transition-colors ${
-                          url.isFavorite ? 'text-amber-500 fill-amber-500' : ''
-                        }`}
-                        title="Toggle Favorite"
-                      >
-                        <Star className="w-4 h-4" />
-                      </button>
+              {/* Destination URL */}
+              <div className="text-xs text-slate-500 dark:text-zinc-400 truncate bg-slate-100/60 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+                <span className="font-semibold text-slate-700 dark:text-zinc-300">Target: </span>
+                <span className="truncate">{url.originalUrl}</span>
+              </div>
 
-                      <div>
-                        <p className="font-semibold text-slate-900 dark:text-white truncate max-w-xs">{url.title || url.shortCode}</p>
-                        <div className="flex items-center space-x-2 mt-0.5">
-                          <a
-                            href={shortUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1"
-                          >
-                            <span>/{url.customAlias || url.shortCode}</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                          <button
-                            onClick={() => handleCopy(url.customAlias || url.shortCode, url._id)}
-                            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                            title="Copy Short Link"
-                          >
-                            {copiedId === url._id ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+              {/* Clicks & Badges */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
+                <div className="flex items-center space-x-1.5">
+                  <span className="font-extrabold text-slate-900 dark:text-white">{url.clickCount} clicks</span>
+                  <span className="text-slate-500 text-[11px]">({url.uniqueClickCount} unique)</span>
+                </div>
+
+                <div className="flex flex-wrap gap-1 items-center">
+                  {url.hasPassword && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center space-x-1">
+                      <Lock className="w-3 h-3" />
+                      <span>Protected</span>
+                    </span>
+                  )}
+                  {url.oneTime && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center space-x-1">
+                      <Flame className="w-3 h-3" />
+                      <span>1-Time</span>
+                    </span>
+                  )}
+                  {url.expiresAt && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center space-x-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Expires</span>
+                    </span>
+                  )}
+                  {url.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    >
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                <button
+                  onClick={() => onOpenAnalytics(url)}
+                  className="py-1.5 px-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800/80 hover:bg-brand-500/20 text-slate-700 dark:text-zinc-200 hover:text-brand-500 flex items-center justify-center space-x-1 transition-colors"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-brand-500" />
+                  <span>Stats</span>
+                </button>
+                <button
+                  onClick={() => onOpenQrCode(url)}
+                  className="py-1.5 px-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800/80 hover:bg-sky-500/20 text-slate-700 dark:text-zinc-200 hover:text-sky-500 flex items-center justify-center space-x-1 transition-colors"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-sky-500" />
+                  <span>QR</span>
+                </button>
+                <button
+                  onClick={() => onEditUrl(url)}
+                  className="py-1.5 px-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800/80 hover:bg-amber-500/20 text-slate-700 dark:text-zinc-200 hover:text-amber-500 flex items-center justify-center space-x-1 transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => onDeleteUrl(url._id)}
+                  className="py-1.5 px-2 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center space-x-1 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Del</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View (hidden on mobile, visible on desktop) */}
+      <div className="hidden md:block glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/80 dark:bg-slate-900/60 text-xs font-semibold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
+                <th className="py-3.5 px-4 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  />
+                </th>
+                <th className="py-3.5 px-4">Title & Short Code</th>
+                <th className="py-3.5 px-4">Destination</th>
+                <th className="py-3.5 px-4">Clicks</th>
+                <th className="py-3.5 px-4">Badges & Tags</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50 text-sm">
+              {urls.map((url) => {
+                const shortUrl = `${import.meta.env.VITE_SHORT_BASE_URL || 'http://localhost:5000/r'}/${url.customAlias || url.shortCode}`;
+                const isSelected = selectedUrlIds.includes(url._id);
+
+                return (
+                  <tr
+                    key={url._id}
+                    className={`hover:bg-slate-100/70 dark:hover:bg-slate-800/40 transition-colors ${
+                      isSelected ? 'bg-brand-500/10 dark:bg-brand-500/5' : ''
+                    }`}
+                  >
+                    {/* Select Checkbox */}
+                    <td className="py-4 px-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectUrl(url._id)}
+                        className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                      />
+                    </td>
+
+                    {/* Title & Short Link */}
+                    <td className="py-4 px-4">
+                      <div className="flex items-start space-x-2">
+                        <button
+                          onClick={() => onToggleFavorite(url)}
+                          className={`mt-0.5 text-slate-400 hover:text-amber-500 transition-colors ${
+                            url.isFavorite ? 'text-amber-500 fill-amber-500' : ''
+                          }`}
+                          title="Toggle Favorite"
+                        >
+                          <Star className="w-4 h-4" />
+                        </button>
+
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-white truncate max-w-xs">{url.title || url.shortCode}</p>
+                          <div className="flex items-center space-x-2 mt-0.5">
+                            <a
+                              href={shortUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1"
+                            >
+                              <span>/{url.customAlias || url.shortCode}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                            <button
+                              onClick={() => handleCopy(url.customAlias || url.shortCode, url._id)}
+                              className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                              title="Copy Short Link"
+                            >
+                              {copiedId === url._id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Original URL Target */}
-                  <td className="py-4 px-4">
-                    <p className="text-xs text-slate-600 dark:text-slate-400 truncate max-w-xs" title={url.originalUrl}>
-                      {url.originalUrl}
-                    </p>
-                  </td>
+                    {/* Original URL Target */}
+                    <td className="py-4 px-4">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 truncate max-w-xs" title={url.originalUrl}>
+                        {url.originalUrl}
+                      </p>
+                    </td>
 
-                  {/* Click Statistics */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-1.5">
-                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">{url.clickCount}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">({url.uniqueClickCount} unique)</span>
-                    </div>
-                  </td>
+                    {/* Click Statistics */}
+                    <td className="py-4 px-4">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm font-extrabold text-slate-900 dark:text-white">{url.clickCount}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">({url.uniqueClickCount} unique)</span>
+                      </div>
+                    </td>
 
-                  {/* Badges & Tags */}
-                  <td className="py-4 px-4">
-                    <div className="flex flex-wrap gap-1 items-center">
-                      {url.hasPassword && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center space-x-1">
-                          <Lock className="w-3 h-3" />
-                          <span>Protected</span>
-                        </span>
-                      )}
-                      {url.oneTime && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center space-x-1">
-                          <Flame className="w-3 h-3" />
-                          <span>1-Time</span>
-                        </span>
-                      )}
-                      {url.expiresAt && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>Expires</span>
-                        </span>
-                      )}
-                      {url.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    {/* Badges & Tags */}
+                    <td className="py-4 px-4">
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {url.hasPassword && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center space-x-1">
+                            <Lock className="w-3 h-3" />
+                            <span>Protected</span>
+                          </span>
+                        )}
+                        {url.oneTime && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center space-x-1">
+                            <Flame className="w-3 h-3" />
+                            <span>1-Time</span>
+                          </span>
+                        )}
+                        {url.expiresAt && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center space-x-1">
+                            <Clock className="w-3 h-3" />
+                            <span>Expires</span>
+                          </span>
+                        )}
+                        {url.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          >
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+
+                    {/* Actions Bar */}
+                    <td className="py-4 px-4 text-right">
+                      <div className="flex items-center justify-end space-x-1">
+                        <button
+                          onClick={() => onOpenAnalytics(url)}
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                          title="View Detailed Analytics"
                         >
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-
-                  {/* Actions Bar */}
-                  <td className="py-4 px-4 text-right">
-                    <div className="flex items-center justify-end space-x-1">
-                      <button
-                        onClick={() => onOpenAnalytics(url)}
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                        title="View Detailed Analytics"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onOpenQrCode(url)}
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                        title="Download QR Code"
-                      >
-                        <QrCode className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onEditUrl(url)}
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                        title="Edit Link"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onDeleteUrl(url._id)}
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-colors"
-                        title="Delete Link"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onOpenQrCode(url)}
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                          title="Download QR Code"
+                        >
+                          <QrCode className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onEditUrl(url)}
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                          title="Edit Link"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteUrl(url._id)}
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-colors"
+                          title="Delete Link"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

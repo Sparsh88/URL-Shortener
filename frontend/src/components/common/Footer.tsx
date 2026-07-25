@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
           <span>© {new Date().getFullYear()} All rights reserved.</span>
         </div>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex flex-wrap items-center justify-center space-x-4 sm:space-x-6">
           <Link to="/privacy" className="hover:text-white transition-colors flex items-center space-x-1">
             <FileText className="w-3.5 h-3.5" />
             <span>Privacy Policy</span>

@@ -17,14 +17,14 @@ export const HomePage: React.FC = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 space-y-20">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-12 sm:pb-24 space-y-12 sm:space-y-20">
         <div className="text-center space-y-6 max-w-4xl mx-auto">
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full glass-panel border border-brand-500/30 text-xs font-semibold text-brand-600 dark:text-brand-300">
             <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
             <span>Next-Gen Enterprise URL Platform</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+          <h1 className="text-3xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
             Shorten, Protect & Track Your Links with{' '}
             <span className="bg-gradient-to-r from-brand-600 via-indigo-600 to-sky-500 dark:from-brand-400 dark:via-indigo-400 dark:to-sky-400 bg-clip-text text-transparent">
               Precision Intelligence

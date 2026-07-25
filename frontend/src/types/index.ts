@@ -101,6 +101,8 @@ export interface OverallAnalyticsResponse {
   timeline: TimelineData[];
 }
 
+export type OverviewResponse = OverallAnalyticsResponse;
+
 export interface AdminStatsResponse {
   totalUsers: number;
   totalLinks: number;

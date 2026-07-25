@@ -164,27 +164,69 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCreateModal }) => {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden glass-panel border-b border-slate-200 dark:border-zinc-800 px-4 pt-2 pb-4 space-y-2">
-          {navLinks.filter(link => link.show).map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800"
-            >
-              {link.name}
-            </Link>
-          ))}
+        <div className="md:hidden glass-panel border-b border-slate-200 dark:border-zinc-800 px-4 pt-3 pb-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+          {isAuthenticated && (
+            <div className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center space-x-3 overflow-hidden">
+                <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.name}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">{user?.email}</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-500/20 text-brand-600 dark:text-brand-300 capitalize flex-shrink-0">
+                {user?.role}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            {navLinks.filter(link => link.show).map((link) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 font-semibold'
+                      : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 text-brand-500" />
+                  <span>{link.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
           {isAuthenticated && onOpenCreateModal && (
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 onOpenCreateModal();
               }}
-              className="w-full mt-2 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-brand-600 text-white font-medium text-sm"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-medium text-sm shadow-md shadow-brand-600/25 active:scale-95 transition-all"
             >
               <Plus className="w-4 h-4" />
               <span>Create Short Link</span>
+            </button>
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign out</span>
             </button>
           )}
         </div>

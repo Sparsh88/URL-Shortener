@@ -12,6 +12,7 @@ interface CreateUrlModalProps {
   folders?: Folder[];
   tags?: Tag[];
   onCreated?: (newUrl: UrlItem) => void;
+  onSuccess?: () => void;
 }
 
 export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
@@ -21,6 +22,7 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
   folders = [],
   tags = [],
   onCreated,
+  onSuccess,
 }) => {
   const [originalUrl, setOriginalUrl] = useState(initialOriginalUrl);
   const [customAlias, setCustomAlias] = useState('');
@@ -73,6 +75,7 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
       if (res.success) {
         showToast('Short link created successfully!', 'success');
         if (onCreated) onCreated(res.data);
+        if (onSuccess) onSuccess();
         onClose();
         // Reset form
         setOriginalUrl('');
@@ -98,7 +101,7 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
         {/* Destination URL */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-1">
             Destination URL *
           </label>
           <div className="relative">
@@ -117,7 +120,7 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
         {/* Title & Custom Alias */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-1">
               Title / Label
             </label>
             <input
@@ -129,7 +132,7 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-1">
               Custom Alias (Optional)
             </label>
             <div className="relative">
@@ -146,15 +149,15 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
         </div>
 
         {/* Security & Access Controls */}
-        <div className="p-4 rounded-xl glass-card border border-slate-800 space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center space-x-1.5">
+        <div className="p-4 rounded-xl glass-card border border-slate-200 dark:border-slate-800 space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center space-x-1.5">
             <Shield className="w-4 h-4" />
             <span>Protection & Expiration Rules</span>
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Passcode Protection</label>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Passcode Protection</label>
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                 <input
@@ -168,29 +171,29 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Expiration Date</label>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Expiration Date</label>
               <div className="relative">
                 <Calendar className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                 <input
                   type="datetime-local"
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-xl glass-input text-xs text-slate-200"
+                  className="w-full pl-10 pr-4 py-2 rounded-xl glass-input text-xs"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={oneTime}
                 onChange={(e) => setOneTime(e.target.checked)}
-                className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-slate-900 border-slate-700"
+                className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
               />
-              <span className="text-xs font-medium text-slate-300 flex items-center space-x-1">
-                <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-zinc-300 flex items-center space-x-1">
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
                 <span>One-Time Link (Self-destruct after 1 click)</span>
               </span>
             </label>
@@ -200,9 +203,9 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
                 type="checkbox"
                 checked={isPrivate}
                 onChange={(e) => setIsPrivate(e.target.checked)}
-                className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-slate-900 border-slate-700"
+                className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
               />
-              <span className="text-xs font-medium text-slate-300">Private Link</span>
+              <span className="text-xs font-medium text-slate-700 dark:text-zinc-300">Private Link</span>
             </label>
           </div>
         </div>
@@ -210,13 +213,13 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
         {/* Tags & Folders */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-1">
               Folder
             </label>
             <select
               value={selectedFolder}
               onChange={(e) => setSelectedFolder(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl glass-input text-xs bg-slate-900"
+              className="w-full px-3 py-2 rounded-xl glass-input text-xs cursor-pointer"
             >
               <option value="">None (Root)</option>
               {folders.map((f) => (
@@ -228,7 +231,7 @@ export const CreateUrlModal: React.FC<CreateUrlModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-1">
               Tags (Press Enter)
             </label>
             <input
