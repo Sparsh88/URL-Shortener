@@ -28,7 +28,10 @@ app.use(
 
 app.use(
   cors({
-    origin: [env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow all Vercel, localhost, and incoming requests dynamically with credentials
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-link-password'],
