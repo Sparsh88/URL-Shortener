@@ -14,7 +14,7 @@ import {
 import { sendVerificationEmail, sendResetPasswordEmail } from '../utils/email';
 import { AuthenticatedRequest } from '../middleware/auth';
 
-export const register = async (req: Request, res: Response): Promise<any> => {
+export const register = async (req: any, res: Response): Promise<any> => {
   try {
     const { name, email, password } = req.body;
 
@@ -63,7 +63,7 @@ export const register = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<any> => {
+export const login = async (req: any, res: Response): Promise<any> => {
   try {
     const { email, password, requiredRole } = req.body;
 

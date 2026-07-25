@@ -4,7 +4,7 @@ import { Analytics } from '../models/Analytics';
 import { parseClientInfo } from '../utils/geo';
 import { sendError, sendSuccess } from '../utils/response';
 
-export const handleRedirect = async (req: Request, res: Response): Promise<any> => {
+export const handleRedirect = async (req: any, res: Response): Promise<any> => {
   try {
     const { shortCode } = req.params;
 

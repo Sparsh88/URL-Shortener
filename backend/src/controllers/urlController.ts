@@ -297,7 +297,7 @@ export const bulkImportUrls = async (req: AuthenticatedRequest, res: Response): 
   }
 };
 
-export const verifyUrlPassword = async (req: Request, res: Response): Promise<any> => {
+export const verifyUrlPassword = async (req: any, res: Response): Promise<any> => {
   try {
     const { shortCode, password } = req.body;
     const url = await Url.findOne({
