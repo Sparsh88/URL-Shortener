@@ -14,6 +14,9 @@ import { AdminPage } from './pages/AdminPage';
 import { DeveloperPage } from './pages/DeveloperPage';
 import { RedirectPage } from './pages/RedirectPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { AbuseReportPage } from './pages/AbuseReportPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +53,9 @@ export const App: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/report-abuse" element={<AbuseReportPage />} />
             <Route
               path="/forgot-password"
               element={

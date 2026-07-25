@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/common/Navbar';
+import { Footer } from '../components/common/Footer';
 import { QuickShortenBar } from '../components/urls/QuickShortenBar';
 import {
   BarChart3,
@@ -90,6 +91,7 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
