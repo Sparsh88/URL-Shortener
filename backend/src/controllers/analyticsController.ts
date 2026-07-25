@@ -28,66 +28,71 @@ export const getUrlAnalytics = async (req: AuthenticatedRequest, res: Response):
       timestamp: { $gte: startDate },
     };
 
-    // Timeline Aggregation
-    const timeline = await Analytics.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: timeframe === '24h' ? '%Y-%m-%d %H:00' : '%Y-%m-%d',
-              date: '$timestamp',
+    // Run all aggregation queries in parallel for fast performance
+    const [
+      timeline,
+      devices,
+      browsers,
+      osList,
+      countries,
+      trafficSources,
+      referrers,
+    ] = await Promise.all([
+      // Timeline Aggregation
+      Analytics.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: timeframe === '24h' ? '%Y-%m-%d %H:00' : '%Y-%m-%d',
+                date: '$timestamp',
+              },
             },
+            clicks: { $sum: 1 },
+            uniques: { $sum: { $cond: ['$isUnique', 1, 0] } },
           },
-          clicks: { $sum: 1 },
-          uniques: { $sum: { $cond: ['$isUnique', 1, 0] } },
         },
-      },
-      { $sort: { _id: 1 } },
-    ]);
-
-    // Device breakdown
-    const devices = await Analytics.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$deviceType', count: { $sum: 1 } } },
-    ]);
-
-    // Browser breakdown
-    const browsers = await Analytics.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$browser', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-    ]);
-
-    // OS breakdown
-    const osList = await Analytics.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$os', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-    ]);
-
-    // Geolocation breakdown
-    const countries = await Analytics.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$country', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
-    ]);
-
-    // Traffic Sources
-    const trafficSources = await Analytics.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$trafficSource', count: { $sum: 1 } } },
-    ]);
-
-    // Top Referrers
-    const referrers = await Analytics.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$referrer', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
+        { $sort: { _id: 1 } },
+      ]),
+      // Device breakdown
+      Analytics.aggregate([
+        { $match: matchStage },
+        { $group: { _id: '$deviceType', count: { $sum: 1 } } },
+      ]),
+      // Browser breakdown
+      Analytics.aggregate([
+        { $match: matchStage },
+        { $group: { _id: '$browser', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+      ]),
+      // OS breakdown
+      Analytics.aggregate([
+        { $match: matchStage },
+        { $group: { _id: '$os', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+      ]),
+      // Geolocation breakdown
+      Analytics.aggregate([
+        { $match: matchStage },
+        { $group: { _id: '$country', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
+      // Traffic Sources
+      Analytics.aggregate([
+        { $match: matchStage },
+        { $group: { _id: '$trafficSource', count: { $sum: 1 } } },
+      ]),
+      // Top Referrers
+      Analytics.aggregate([
+        { $match: matchStage },
+        { $group: { _id: '$referrer', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
     ]);
 
     return sendSuccess(res, {

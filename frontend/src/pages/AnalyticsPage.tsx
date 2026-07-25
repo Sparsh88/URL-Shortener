@@ -24,32 +24,51 @@ export const AnalyticsPage: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    urlService
-      .getUrls()
-      .then((res) => {
-        if (res.success && res.data.length > 0) {
-          setUserUrls(res.data);
-          if (!selectedUrlId) {
-            setSelectedUrlId(res.data[0]._id);
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        const urlRes = await urlService.getUrls();
+        if (!isMounted) return;
+
+        if (urlRes.success && urlRes.data.length > 0) {
+          setUserUrls(urlRes.data);
+
+          const initialTargetId =
+            urlIdParam && urlRes.data.some((u) => u._id === urlIdParam)
+              ? urlIdParam
+              : urlRes.data[0]._id;
+
+          setSelectedUrlId(initialTargetId);
+
+          const analyticsRes = await analyticsService.getUrlAnalytics(initialTargetId, timeframe);
+          if (isMounted && analyticsRes.success) {
+            setAnalyticsData(analyticsRes.data);
           }
         } else {
-          setLoading(false);
+          setUserUrls([]);
+          setAnalyticsData(null);
         }
-      })
-      .catch(() => {
-        setLoading(false);
-      });
+      } catch (err) {
+        if (isMounted) showToast('Failed to load analytics', 'error');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const fetchAnalytics = async () => {
-    if (!selectedUrlId) {
-      setLoading(false);
-      return;
-    }
-
+  const handleUrlChange = async (urlId: string) => {
+    setSelectedUrlId(urlId);
     setLoading(true);
     try {
-      const res = await analyticsService.getUrlAnalytics(selectedUrlId, timeframe);
+      const res = await analyticsService.getUrlAnalytics(urlId, timeframe);
       if (res.success) {
         setAnalyticsData(res.data);
       }
@@ -60,9 +79,22 @@ export const AnalyticsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [selectedUrlId, timeframe]);
+  const handleTimeframeChange = async (newTimeframe: '24h' | '7d' | '30d' | '1y') => {
+    setTimeframe(newTimeframe);
+    if (!selectedUrlId) return;
+
+    setLoading(true);
+    try {
+      const res = await analyticsService.getUrlAnalytics(selectedUrlId, newTimeframe);
+      if (res.success) {
+        setAnalyticsData(res.data);
+      }
+    } catch (err) {
+      showToast('Failed to load analytics', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-black text-slate-900 dark:text-zinc-100 flex flex-col transition-colors duration-200">
@@ -91,7 +123,7 @@ export const AnalyticsPage: React.FC = () => {
             {userUrls.length > 0 && (
               <select
                 value={selectedUrlId}
-                onChange={(e) => setSelectedUrlId(e.target.value)}
+                onChange={(e) => handleUrlChange(e.target.value)}
                 className="px-4 py-2 rounded-xl glass-input text-xs font-semibold max-w-xs cursor-pointer"
               >
                 {userUrls.map((u) => (
@@ -107,7 +139,7 @@ export const AnalyticsPage: React.FC = () => {
               {(['24h', '7d', '30d', '1y'] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setTimeframe(t)}
+                  onClick={() => handleTimeframeChange(t)}
                   className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
                     timeframe === t
                       ? 'bg-brand-600 text-white shadow-md'
