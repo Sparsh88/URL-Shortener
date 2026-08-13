@@ -4,29 +4,24 @@ import { ApiKeyItem } from '../../types';
 import { useToast } from '../common/Toast';
 import { Key, Plus, Trash2, Copy, Check, Code } from 'lucide-react';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 export const ApiKeyManager: React.FC = () => {
-  const [keys, setKeys] = useState<ApiKeyItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [newKeyName, setNewKeyName] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchKeys = async () => {
-    try {
+  const { data: keys = [], isLoading: loading } = useQuery({
+    queryKey: ['apiKeys'],
+    queryFn: async () => {
       const res = await apiKeyService.getKeys();
-      if (res.success) setKeys(res.data);
-    } catch (err) {
-      showToast('Failed to load API Keys', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchKeys();
-  }, []);
+      return (res.data || []) as ApiKeyItem[];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
 
   const handleCreateKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +33,7 @@ export const ApiKeyManager: React.FC = () => {
         setCreatedKey(res.data.key);
         showToast('API Key generated successfully!', 'success');
         setNewKeyName('');
-        fetchKeys();
+        queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       }
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to generate API Key', 'error');
@@ -49,7 +44,7 @@ export const ApiKeyManager: React.FC = () => {
     try {
       await apiKeyService.deleteKey(id);
       showToast('API Key revoked', 'info');
-      fetchKeys();
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
     } catch (err) {
       showToast('Failed to delete API Key', 'error');
     }

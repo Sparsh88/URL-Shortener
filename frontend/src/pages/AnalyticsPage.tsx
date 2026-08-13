@@ -11,89 +11,59 @@ import { UrlAnalyticsResponse, UrlItem } from '../types';
 import { useToast } from '../components/common/Toast';
 import { BarChart3, Globe, Smartphone, Compass, Clock, Link2 } from 'lucide-react';
 
+import { useQuery } from '@tanstack/react-query';
+
 export const AnalyticsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const urlIdParam = searchParams.get('urlId');
 
   const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d' | '1y'>('7d');
-  const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<UrlAnalyticsResponse | null>(null);
-  const [userUrls, setUserUrls] = useState<UrlItem[]>([]);
   const [selectedUrlId, setSelectedUrlId] = useState<string>(urlIdParam || '');
 
   const { showToast } = useToast();
 
+  // 1. Fetch user URLs with caching
+  const { data: userUrls = [], isLoading: urlsLoading } = useQuery({
+    queryKey: ['userUrlsForAnalytics'],
+    queryFn: async () => {
+      const res = await urlService.getUrls({ limit: 100 });
+      return (res.data || []) as UrlItem[];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  // Auto-select first URL if none currently selected
   useEffect(() => {
-    let isMounted = true;
-
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        const urlRes = await urlService.getUrls();
-        if (!isMounted) return;
-
-        if (urlRes.success && urlRes.data.length > 0) {
-          setUserUrls(urlRes.data);
-
-          const initialTargetId =
-            urlIdParam && urlRes.data.some((u: UrlItem) => u._id === urlIdParam)
-              ? urlIdParam
-              : urlRes.data[0]._id;
-
-          setSelectedUrlId(initialTargetId);
-
-          const analyticsRes = await analyticsService.getUrlAnalytics(initialTargetId, timeframe);
-          if (isMounted && analyticsRes.success) {
-            setAnalyticsData(analyticsRes.data);
-          }
-        } else {
-          setUserUrls([]);
-          setAnalyticsData(null);
-        }
-      } catch (err) {
-        if (isMounted) showToast('Failed to load analytics', 'error');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadInitialData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleUrlChange = async (urlId: string) => {
-    setSelectedUrlId(urlId);
-    setLoading(true);
-    try {
-      const res = await analyticsService.getUrlAnalytics(urlId, timeframe);
-      if (res.success) {
-        setAnalyticsData(res.data);
-      }
-    } catch (err) {
-      showToast('Failed to load analytics', 'error');
-    } finally {
-      setLoading(false);
+    if (!selectedUrlId && userUrls.length > 0) {
+      const targetId = urlIdParam && userUrls.some((u) => u._id === urlIdParam)
+        ? urlIdParam
+        : userUrls[0]._id;
+      setSelectedUrlId(targetId);
     }
+  }, [userUrls, selectedUrlId, urlIdParam]);
+
+  const activeTargetId = selectedUrlId || urlIdParam || (userUrls[0]?._id ?? '');
+
+  // 2. Fetch analytics for selected URL with client caching
+  const { data: analyticsData = null, isLoading: analyticsLoading } = useQuery({
+    queryKey: ['analytics', activeTargetId, timeframe],
+    queryFn: async () => {
+      if (!activeTargetId) return null;
+      const res = await analyticsService.getUrlAnalytics(activeTargetId, timeframe);
+      return (res.data || null) as UrlAnalyticsResponse | null;
+    },
+    enabled: Boolean(activeTargetId),
+    staleTime: 1000 * 60 * 2, // 2 minutes client cache freshness
+  });
+
+  const loading = urlsLoading || (Boolean(activeTargetId) && analyticsLoading);
+
+  const handleUrlChange = (urlId: string) => {
+    setSelectedUrlId(urlId);
   };
 
-  const handleTimeframeChange = async (newTimeframe: '24h' | '7d' | '30d' | '1y') => {
+  const handleTimeframeChange = (newTimeframe: '24h' | '7d' | '30d' | '1y') => {
     setTimeframe(newTimeframe);
-    if (!selectedUrlId) return;
-
-    setLoading(true);
-    try {
-      const res = await analyticsService.getUrlAnalytics(selectedUrlId, newTimeframe);
-      if (res.success) {
-        setAnalyticsData(res.data);
-      }
-    } catch (err) {
-      showToast('Failed to load analytics', 'error');
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

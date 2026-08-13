@@ -9,41 +9,49 @@ import { User, AdminStatsResponse } from '../types';
 import { useToast } from '../components/common/Toast';
 import { Shield, Users, Link2, MousePointerClick, Search } from 'lucide-react';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 export const AdminPage: React.FC = () => {
-  const [stats, setStats] = useState<AdminStatsResponse | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [inspectUserId, setInspectUserId] = useState<string | null>(null);
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchAdminData = async () => {
-    try {
-      setLoading(true);
-      const [statsRes, usersRes] = await Promise.all([
-        adminService.getStats(),
-        adminService.getUsers({ search }),
-      ]);
+  // Cached Admin stats query
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['adminStats'],
+    queryFn: async () => {
+      const res = await adminService.getStats();
+      return (res.data || null) as AdminStatsResponse | null;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes client cache freshness
+  });
 
-      if (statsRes.success) setStats(statsRes.data);
-      if (usersRes.success) setUsers(usersRes.data);
-    } catch (err) {
-      showToast('Failed to load admin panel data', 'error');
-    } finally {
-      setLoading(false);
-    }
+  // Cached Users list query with search filtering
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['adminUsers', { search }],
+    queryFn: async () => {
+      const res = await adminService.getUsers({ search });
+      return (res.data || []) as User[];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const stats = statsData || null;
+  const users = usersData || [];
+  const loading = statsLoading || usersLoading;
+
+  const refreshAdminData = () => {
+    queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
   };
-
-  useEffect(() => {
-    fetchAdminData();
-  }, [search]);
 
   const handleToggleSuspend = async (userId: string) => {
     try {
       const res = await adminService.toggleSuspension(userId);
       if (res.success) {
         showToast(res.message || 'User status updated', 'success');
-        fetchAdminData();
+        refreshAdminData();
       }
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Action failed', 'error');
@@ -55,7 +63,7 @@ export const AdminPage: React.FC = () => {
       const res = await adminService.toggleVerification(userId);
       if (res.success) {
         showToast(res.message || 'User verification updated', 'success');
-        fetchAdminData();
+        refreshAdminData();
       }
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Action failed', 'error');
@@ -67,7 +75,7 @@ export const AdminPage: React.FC = () => {
       const res = await adminService.updateRole(userId, role);
       if (res.success) {
         showToast(`User role updated to ${role}`, 'success');
-        fetchAdminData();
+        refreshAdminData();
       }
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to update role', 'error');
@@ -80,7 +88,7 @@ export const AdminPage: React.FC = () => {
       const res = await adminService.deleteUser(userId);
       if (res.success) {
         showToast('User deleted', 'info');
-        fetchAdminData();
+        refreshAdminData();
       }
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to delete user', 'error');
@@ -204,7 +212,7 @@ export const AdminPage: React.FC = () => {
         isOpen={Boolean(inspectUserId)}
         onClose={() => setInspectUserId(null)}
         userId={inspectUserId}
-        onUserUpdated={fetchAdminData}
+        onUserUpdated={refreshAdminData}
       />
     </div>
   );

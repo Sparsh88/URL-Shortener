@@ -50,43 +50,45 @@ export const handleRedirect = async (req: any, res: Response): Promise<any> => {
 
     const clientInfo = parseClientInfo(userAgentStr, ipStr, referrerStr);
 
-    // Check unique visitor in past 24h
+    // Check unique visitor in past 24h using covered index
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const existingClick = await Analytics.findOne({
       urlId: url._id,
       ip: ipStr,
       timestamp: { $gte: twentyFourHoursAgo },
-    });
+    })
+      .select('_id')
+      .lean();
 
     const isUnique = !existingClick;
 
-    await Analytics.create({
-      urlId: url._id,
-      shortCode: url.shortCode,
-      ip: ipStr,
-      userAgent: userAgentStr,
-      deviceType: clientInfo.deviceType,
-      os: clientInfo.os,
-      browser: clientInfo.browser,
-      country: clientInfo.country,
-      city: clientInfo.city,
-      referrer: clientInfo.referrer,
-      trafficSource: clientInfo.trafficSource,
-      isUnique,
-    });
-
-    // Update URL counts
-    url.clickCount += 1;
-    if (isUnique) {
-      url.uniqueClickCount += 1;
-    }
-
-    // Handle One-Time Link self-destruction
-    if (url.oneTime) {
-      url.isActive = false;
-    }
-
-    await url.save();
+    // Asynchronously log analytics and atomically increment click counts
+    await Promise.all([
+      Analytics.create({
+        urlId: url._id,
+        shortCode: url.shortCode,
+        ip: ipStr,
+        userAgent: userAgentStr,
+        deviceType: clientInfo.deviceType,
+        os: clientInfo.os,
+        browser: clientInfo.browser,
+        country: clientInfo.country,
+        city: clientInfo.city,
+        referrer: clientInfo.referrer,
+        trafficSource: clientInfo.trafficSource,
+        isUnique,
+      }),
+      Url.updateOne(
+        { _id: url._id },
+        {
+          $inc: {
+            clickCount: 1,
+            ...(isUnique ? { uniqueClickCount: 1 } : {}),
+          },
+          ...(url.oneTime ? { $set: { isActive: false } } : {}),
+        }
+      ),
+    ]);
 
     // If client requested JSON (e.g. from SPA preview), send target URL, else redirect 302
     if (req.headers.accept?.includes('application/json') || req.query.json === 'true') {

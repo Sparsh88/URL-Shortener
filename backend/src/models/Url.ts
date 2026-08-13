@@ -46,6 +46,11 @@ const UrlSchema = new Schema<IUrl>(
 );
 
 UrlSchema.index({ userId: 1, createdAt: -1 });
+UrlSchema.index({ userId: 1, clickCount: -1 });
+UrlSchema.index({ userId: 1, isFavorite: 1, createdAt: -1 });
+UrlSchema.index({ userId: 1, folderId: 1 });
+UrlSchema.index({ userId: 1, tags: 1 });
+UrlSchema.index({ userId: 1, isActive: 1 });
 UrlSchema.index({ tags: 1 });
 
 export const Url = mongoose.model<IUrl>('Url', UrlSchema);

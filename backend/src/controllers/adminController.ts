@@ -6,50 +6,58 @@ import { sendSuccess, sendError } from '../utils/response';
 
 export const getAdminStats = async (req: any, res: Response): Promise<any> => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalLinks = await Url.countDocuments();
-
-    const clicksAggregate = await Analytics.countDocuments();
-
-    const topUsers = await Url.aggregate([
-      { $group: { _id: '$userId', linkCount: { $sum: 1 }, totalClicks: { $sum: '$clickCount' } } },
-      { $sort: { totalClicks: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user',
+    // Run all 6 metric queries concurrently in parallel to eliminate database waterfall
+    const [
+      totalUsers,
+      totalLinks,
+      totalClicks,
+      topUsers,
+      topLinks,
+      recentUsers,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Url.countDocuments(),
+      Analytics.countDocuments(),
+      Url.aggregate([
+        { $group: { _id: '$userId', linkCount: { $sum: 1 }, totalClicks: { $sum: '$clickCount' } } },
+        { $sort: { totalClicks: -1 } },
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'user',
+          },
         },
-      },
-      { $unwind: '$user' },
-      {
-        $project: {
-          _id: 1,
-          linkCount: 1,
-          totalClicks: 1,
-          name: '$user.name',
-          email: '$user.email',
-          role: '$user.role',
+        { $unwind: '$user' },
+        {
+          $project: {
+            _id: 1,
+            linkCount: 1,
+            totalClicks: 1,
+            name: '$user.name',
+            email: '$user.email',
+            role: '$user.role',
+          },
         },
-      },
+      ]),
+      Url.find()
+        .sort({ clickCount: -1 })
+        .limit(5)
+        .populate('userId', 'name email')
+        .lean(),
+      User.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('-password')
+        .lean(),
     ]);
-
-    const topLinks = await Url.find()
-      .sort({ clickCount: -1 })
-      .limit(5)
-      .populate('userId', 'name email');
-
-    const recentUsers = await User.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('-password');
 
     return sendSuccess(res, {
       totalUsers,
       totalLinks,
-      totalClicks: clicksAggregate,
+      totalClicks,
       topUsers,
       topLinks,
       recentUsers,
@@ -62,24 +70,28 @@ export const getAdminStats = async (req: any, res: Response): Promise<any> => {
 export const getUsers = async (req: any, res: Response): Promise<any> => {
   try {
     const { page = 1, limit = 10, search = '' } = req.query;
-    const pageNum = parseInt(page as string, 10) || 1;
-    const limitNum = parseInt(limit as string, 10) || 10;
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 10));
     const skip = (pageNum - 1) * limitNum;
 
     const filter: any = {};
     if (search) {
+      const sanitized = (search as string).trim();
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { name: { $regex: sanitized, $options: 'i' } },
+        { email: { $regex: sanitized, $options: 'i' } },
       ];
     }
 
-    const total = await User.countDocuments(filter);
-    const users = await User.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .select('-password');
+    const [total, users] = await Promise.all([
+      User.countDocuments(filter),
+      User.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .select('-password')
+        .lean(),
+    ]);
 
     return sendSuccess(res, users, 'Users retrieved successfully', 200, {
       total,
@@ -184,10 +196,12 @@ export const toggleUserVerification = async (req: any, res: Response): Promise<a
 export const getUserLinks = async (req: any, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id).select('-password');
-    if (!user) return sendError(res, 'User not found', 404);
+    const [user, urls] = await Promise.all([
+      User.findById(id).select('-password').lean(),
+      Url.find({ userId: id }).sort({ createdAt: -1 }).lean(),
+    ]);
 
-    const urls = await Url.find({ userId: id }).sort({ createdAt: -1 });
+    if (!user) return sendError(res, 'User not found', 404);
 
     return sendSuccess(
       res,

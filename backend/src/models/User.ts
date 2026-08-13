@@ -33,4 +33,7 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
+UserSchema.index({ createdAt: -1 });
+UserSchema.index({ role: 1 });
+
 export const User = mongoose.model<IUser>('User', UserSchema);

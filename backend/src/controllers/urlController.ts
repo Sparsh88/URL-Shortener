@@ -97,17 +97,19 @@ export const getUrls = async (req: AuthenticatedRequest, res: Response): Promise
       sortOrder = 'desc',
     } = req.query;
 
-    const pageNum = parseInt(page as string, 10) || 1;
-    const limitNum = parseInt(limit as string, 10) || 10;
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 10));
     const skip = (pageNum - 1) * limitNum;
 
     const filter: any = { userId: req.user?.userId };
 
     if (search) {
+      const sanitizedSearch = (search as string).trim();
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { shortCode: { $regex: search, $options: 'i' } },
-        { originalUrl: { $regex: search, $options: 'i' } },
+        { title: { $regex: sanitizedSearch, $options: 'i' } },
+        { shortCode: { $regex: sanitizedSearch, $options: 'i' } },
+        { customAlias: { $regex: sanitizedSearch, $options: 'i' } },
+        { originalUrl: { $regex: sanitizedSearch, $options: 'i' } },
       ];
     }
 
@@ -126,12 +128,16 @@ export const getUrls = async (req: AuthenticatedRequest, res: Response): Promise
     const sortOptions: any = {};
     sortOptions[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
 
-    const total = await Url.countDocuments(filter);
-    const urls = await Url.find(filter)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limitNum)
-      .populate('folderId', 'name color');
+    // Execute count and query concurrently in parallel to eliminate database waterfall
+    const [total, urls] = await Promise.all([
+      Url.countDocuments(filter),
+      Url.find(filter)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limitNum)
+        .populate('folderId', 'name color')
+        .lean(),
+    ]);
 
     return sendSuccess(res, urls, 'URLs retrieved successfully', 200, {
       total,
@@ -147,7 +153,9 @@ export const getUrls = async (req: AuthenticatedRequest, res: Response): Promise
 export const getUrlById = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
-    const url = await Url.findOne({ _id: id, userId: req.user?.userId }).populate('folderId');
+    const url = await Url.findOne({ _id: id, userId: req.user?.userId })
+      .populate('folderId', 'name color')
+      .lean();
 
     if (!url) {
       return sendError(res, 'URL not found', 404);

@@ -19,6 +19,8 @@ connectDB().then(() => {
 });
 
 // 2. Core Middlewares
+app.set('etag', 'strong'); // Enable HTTP 304 Not Modified caching support
+
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -43,6 +45,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(globalLimiter);
+
+// Cold-Start & Serverless Database Guard: Ensure DB connection is active before processing requests
+app.use(async (req: Request, res: Response, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // 3. Health Check
 app.get('/health', (req: Request, res: Response) => {

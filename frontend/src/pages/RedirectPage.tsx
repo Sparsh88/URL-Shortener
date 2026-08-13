@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react'
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { urlService } from '../services/urlService';
 import { useToast } from '../components/common/Toast';
 import { Lock, ArrowRight, ShieldAlert, Link2 } from 'lucide-react';

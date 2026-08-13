@@ -25,10 +25,9 @@ import {
   Trash2,
 } from 'lucide-react';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 export const DashboardPage: React.FC = () => {
-  const [overview, setOverview] = useState<OverviewResponse | null>(null);
-  const [urls, setUrls] = useState<UrlItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -44,39 +43,48 @@ export const DashboardPage: React.FC = () => {
   const { selectedUrlIds, clearSelection } = useUrlStore();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [overviewRes, urlsRes] = await Promise.all([
-        urlService.getOverview(),
-        urlService.getUrls({
-          search,
-          tag: tagFilter,
-          isFavorite: showFavoritesOnly ? true : undefined,
-          sortBy,
-        }),
-      ]);
+  // Cached overview query with background revalidation
+  const { data: overviewData, isLoading: overviewLoading } = useQuery({
+    queryKey: ['overview'],
+    queryFn: async () => {
+      const res = await urlService.getOverview();
+      return res.data as OverviewResponse;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes cache freshness
+  });
 
-      if (overviewRes.success) setOverview(overviewRes.data);
-      if (urlsRes.success) setUrls(urlsRes.data);
-    } catch (err) {
-      showToast('Failed to load dashboard data', 'error');
-    } finally {
-      setLoading(false);
-    }
+  // Cached paginated & filtered URLs query
+  const { data: urlsData, isLoading: urlsLoading } = useQuery({
+    queryKey: ['urls', { search, tagFilter, showFavoritesOnly, sortBy }],
+    queryFn: async () => {
+      const res = await urlService.getUrls({
+        search,
+        tag: tagFilter,
+        isFavorite: showFavoritesOnly ? true : undefined,
+        sortBy,
+      });
+      return (res.data || []) as UrlItem[];
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes cache freshness
+  });
+
+  const overview = overviewData || null;
+  const urls = urlsData || [];
+  const loading = overviewLoading || urlsLoading;
+
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['overview'] });
+    queryClient.invalidateQueries({ queryKey: ['urls'] });
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [search, tagFilter, showFavoritesOnly, sortBy]);
 
   const handleToggleFavorite = async (url: UrlItem) => {
     try {
       const res = await urlService.toggleFavorite(url._id);
       if (res.success) {
         showToast(res.message, 'success');
-        fetchData();
+        refreshData();
       }
     } catch (err) {
       showToast('Failed to update favorite status', 'error');
@@ -89,7 +97,7 @@ export const DashboardPage: React.FC = () => {
       const res = await urlService.deleteUrl(id);
       if (res.success) {
         showToast('Short link deleted', 'info');
-        fetchData();
+        refreshData();
       }
     } catch (err) {
       showToast('Failed to delete short link', 'error');
@@ -105,7 +113,7 @@ export const DashboardPage: React.FC = () => {
       if (res.success) {
         showToast(res.message, 'success');
         clearSelection();
-        fetchData();
+        refreshData();
       }
     } catch (err) {
       showToast('Bulk delete failed', 'error');
@@ -220,7 +228,7 @@ export const DashboardPage: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.25 }}
         >
           <QuickShortenBar
-            onUrlCreated={() => fetchData()}
+            onUrlCreated={() => refreshData()}
             onOpenAdvancedModal={() => setCreateModalOpen(true)}
           />
         </motion.div>
@@ -326,7 +334,7 @@ export const DashboardPage: React.FC = () => {
       <CreateUrlModal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={() => fetchData()}
+        onSuccess={() => refreshData()}
       />
 
       {activeUrl && (
@@ -335,7 +343,7 @@ export const DashboardPage: React.FC = () => {
             isOpen={editModalOpen}
             onClose={() => setEditModalOpen(false)}
             url={activeUrl}
-            onSuccess={() => fetchData()}
+            onSuccess={() => refreshData()}
           />
 
           <QrCodeModal
@@ -349,7 +357,7 @@ export const DashboardPage: React.FC = () => {
       <BulkCsvModal
         isOpen={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
-        onSuccess={() => fetchData()}
+        onSuccess={() => refreshData()}
       />
     </div>
   );

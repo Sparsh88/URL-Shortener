@@ -36,5 +36,10 @@ const AnalyticsSchema = new Schema<IAnalytics>(
 );
 
 AnalyticsSchema.index({ urlId: 1, timestamp: -1 });
+AnalyticsSchema.index({ urlId: 1, ip: 1, timestamp: -1 });
+AnalyticsSchema.index({ urlId: 1, timestamp: -1, isUnique: 1 });
+AnalyticsSchema.index({ urlId: 1, deviceType: 1 });
+AnalyticsSchema.index({ urlId: 1, country: 1 });
+AnalyticsSchema.index({ urlId: 1, trafficSource: 1 });
 
 export const Analytics = mongoose.model<IAnalytics>('Analytics', AnalyticsSchema);

@@ -44,7 +44,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
 // Folders
 export const getFolders = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    const folders = await Folder.find({ userId: req.user?.userId }).sort({ name: 1 });
+    const folders = await Folder.find({ userId: req.user?.userId }).sort({ name: 1 }).lean();
     return sendSuccess(res, folders);
   } catch (error) {
     return sendError(res, (error as Error).message, 500);
@@ -81,7 +81,7 @@ export const deleteFolder = async (req: AuthenticatedRequest, res: Response): Pr
 // Tags
 export const getTags = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    const tags = await Tag.find({ userId: req.user?.userId }).sort({ name: 1 });
+    const tags = await Tag.find({ userId: req.user?.userId }).sort({ name: 1 }).lean();
     return sendSuccess(res, tags);
   } catch (error) {
     return sendError(res, (error as Error).message, 500);
