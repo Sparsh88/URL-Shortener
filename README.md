@@ -1,4 +1,4 @@
-# LinkForge - Full-Stack URL Shortener & Analytics Platform
+# LinkForge — Full-Stack URL Shortener & Analytics Platform
 
 A full-stack URL shortening and link management platform built with React, Node.js, Express, TypeScript, and MongoDB, featuring fast redirection, granular click analytics, QR code generation, and developer API key access.
 
@@ -49,50 +49,49 @@ In addition to the web interface, LinkForge includes a developer API with key-ba
 
 | Category | Technology | Purpose |
 |---|---|---|
-| **Frontend Framework** | React 18, TypeScript, Vite | Client-side application rendering and type safety |
-| **Styling & UI** | Tailwind CSS, Framer Motion, Lucide React | Glassmorphic interface, responsive layout, and transitions |
-| **State & Data Fetching** | Zustand, TanStack React Query, Axios | Global state, server caching, and HTTP requests |
-| **Data Visualization & QR** | Recharts, qrcode.react, PapaParse | Analytics charts, QR rendering, and CSV parsing |
-| **Backend Runtime & API** | Node.js, Express.js, TypeScript | RESTful API routing, business logic, and redirection engine |
-| **Database & ODM** | MongoDB, Mongoose | Schema modeling, compound indexing, and aggregate pipelines |
-| **Authentication & Security** | JWT, bcryptjs, Helmet, Express-Rate-Limit | Token auth, password hashing, security headers, and throttling |
-| **Parsing & Utilities** | GeoIP-Lite, Useragent, Zod, Nodemailer | Geo-location lookup, client parsing, validation, and email |
-| **Hosting & Deployment** | Vercel (Frontend), Render (Backend), MongoDB Atlas | Cloud deployment and database hosting |
+| Frontend Framework | React 18, TypeScript, Vite | Client-side application rendering and strict type safety |
+| Styling & UI | Tailwind CSS, Framer Motion, Lucide React | Glassmorphic interface, responsive layout, and transitions |
+| State & Data Fetching | Zustand, TanStack React Query, Axios | Global state, server caching, and HTTP requests |
+| Data Visualization & QR | Recharts, qrcode.react, PapaParse | Analytics charts, QR rendering, and CSV parsing |
+| Backend Runtime | Node.js, Express.js, TypeScript | RESTful API routing, business logic, and redirection engine |
+| Database & ODM | MongoDB Atlas, Mongoose | NoSQL document store for users, links, analytics clicks, and API keys |
+| Geo & Device Telemetry | geoip-lite, useragent | IP geolocation extraction and browser/OS identification |
+| Security & Auth | JWT, bcryptjs, Helmet, Express Rate Limit | Token authentication, password hashing, and API rate limiting |
+| Deployment | Vercel (Frontend), Render (Backend) | Cloud hosting with automated deployment pipelines |
 
 ---
 
 ## Architecture
 
-```mermaid
-graph TD
-    User["Client Browser / Developer API"]
-    Vercel["Frontend (Vercel SPA - React + Vite)"]
-    Render["Backend REST API & Redirect Engine (Render - Express + Node.js)"]
-    Mongo[("MongoDB Atlas")]
-    GeoIP["GeoIP-Lite & UserAgent Parser"]
-    SMTP["SMTP Mailer (Nodemailer)"]
-
-    User -->|"Access Dashboard & UI"| Vercel
-    User -->|"Resolve Short URL (/:shortCode)"| Render
-    User -->|"API Requests (x-api-key)"| Render
-    Vercel -->|"REST API Calls (Bearer Token)"| Render
-    Render -->|"CRUD & Aggregate Pipelines"| Mongo
-    Render -->|"Parse IP & Client Header"| GeoIP
-    Render -->|"Auth & Verification Mails"| SMTP
+```text
+Client Browser / Developer API Client
+       │
+       │ HTTPS / API Request
+       ▼
+Express.js API Server (Node.js + TypeScript)
+  ├── Security & Rate Limiting Middleware (Helmet, Express Rate Limit)
+  ├── Auth Middleware (JWT & API Key Verification: x-api-key)
+  ├── Redirection Controller (Fast 302 Redirect + Async Click Analytics Logging)
+  │         │
+  │         └──> Telemetry Parsers (geoip-lite + useragent)
+  │
+  ├── Controllers (Auth, Links, Analytics, Bulk, Admin)
+  └── Mongoose ODM (MongoDB Atlas Connection Pooling)
+               │
+               ▼
+       MongoDB Database (Atlas)
 ```
 
 ---
 
 ## Application Flow
 
-1. **Authentication:** User registers or logs in; the server validates credentials and issues JWT access and refresh tokens.
-2. **Link Configuration:** User enters a destination URL and configures optional properties (custom alias, expiration time, password, tags, or one-time access).
-3. **Validation & Creation:** Backend validates inputs using Zod schemas, hashes passwords with bcrypt (if set), assigns a unique short code, and saves the document in MongoDB.
-4. **Link Distribution:** User copies the short URL or exports a customized QR code for marketing or distribution.
-5. **Redirection Request:** Visitor navigates to the short link (`/:shortCode` or `/r/:shortCode`).
-6. **Security & State Validation:** Redirection controller checks active status, expiration timestamp, and validates password credentials if enabled.
-7. **Analytics Logging:** Server extracts IP, GeoIP location, browser, OS, and referrer, logging an analytics record while atomically incrementing link click counters.
-8. **Destination Redirect:** Visitor is redirected to the original destination URL via an HTTP 302 response.
+1. **Short Link Creation:** User enters target URL, optional custom alias, password, expiration date, or one-time view toggle.
+2. **NanoID Code Generation:** Backend validates destination URL, checks alias uniqueness, and saves link record in MongoDB.
+3. **Visitor Redirection:** Visitor requests short URL (`/:code`); backend verifies expiration and password requirements, then issues a fast `302 Redirect` to target destination.
+4. **Asynchronous Telemetry Logging:** In background, backend resolves visitor IP via `geoip-lite` and parse user-agent headers, creating an analytics record.
+5. **Analytics Visualization:** Link creator opens dashboard; Recharts renders geographic maps, device distributions, and timeline click volume.
+6. **Programmatic Access:** Developers supply `x-api-key` header to create and manage links programmatically via REST endpoints.
 
 ---
 
@@ -102,41 +101,37 @@ graph TD
 URL-Shortener/
 ├── backend/
 │   ├── src/
-│   │   ├── config/          # Database connection and environment config
-│   │   ├── controllers/     # Auth, URL, analytics, admin, & apiKey logic
-│   │   ├── middleware/      # JWT auth, rate limiter, validation, & error handler
-│   │   ├── models/          # Mongoose schemas (User, Url, Analytics, ApiKey, etc.)
-│   │   ├── routes/          # Express route definitions
-│   │   ├── utils/           # Email, GeoIP, JWT, NanoID, and response helpers
-│   │   └── server.ts        # Server entrypoint and middleware orchestration
+│   │   ├── config/            # Database and environment configuration
+│   │   ├── controllers/       # Link, auth, analytics, apiKey, admin controllers
+│   │   ├── middleware/        # JWT auth, apiKey auth, rate limiter, error handler
+│   │   ├── models/            # Mongoose models (User, Link, Click, ApiKey)
+│   │   ├── routes/            # REST API routes and redirect routes
+│   │   ├── utils/             # Geolocation helpers, NanoID generator, QR utilities
+│   │   └── server.ts          # Server entry point
 │   ├── package.json
 │   └── tsconfig.json
 ├── frontend/
 │   ├── src/
-│   │   ├── components/      # Modular UI components (auth, urls, analytics, admin)
-│   │   ├── pages/           # Route views (Dashboard, Analytics, Admin, etc.)
-│   │   ├── services/        # Axios API client integrations
-│   │   ├── stores/          # Zustand state stores (auth, theme, url)
-│   │   ├── types/           # TypeScript interfaces and types
-│   │   ├── App.tsx          # Router configuration and React Query provider
-│   │   └── main.tsx         # React application entrypoint
+│   │   ├── components/        # ShortenerForm, LinkList, AnalyticsModal, QRCodeModal, AdminTable
+│   │   ├── pages/             # Home, Dashboard, Analytics, DeveloperAPI, Admin, Auth
+│   │   ├── store/             # Zustand stores
+│   │   ├── types/             # TypeScript interfaces
+│   │   ├── App.tsx            # Route configuration
+│   │   └── main.tsx           # React entry point
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── vite.config.ts
-├── render.yaml              # Render backend deployment blueprint
-├── vercel.json              # Vercel SPA routing rewrite rules
 └── README.md
 ```
 
 ---
 
-## Getting Started Locally
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or later)
-- MongoDB instance (local or MongoDB Atlas connection string)
-- npm or yarn
+- **Node.js**: v18.0.0 or higher
+- **MongoDB**: MongoDB Atlas connection URI or local instance
 
 ### 1. Clone the Repository
 
@@ -145,76 +140,58 @@ git clone https://github.com/Sparsh88/URL-Shortener.git
 cd URL-Shortener
 ```
 
-### 2. Backend Configuration & Setup
+### 2. Backend Setup
 
 ```bash
 cd backend
 npm install
-cp .env.example .env
 ```
 
-Configure the environment variables in `backend/.env`:
+Create `backend/.env`:
 
 ```env
 PORT=5000
-NODE_ENV=development
 MONGODB_URI=your_mongodb_connection_string
-JWT_ACCESS_SECRET=your_jwt_access_secret
-JWT_REFRESH_SECRET=your_jwt_refresh_secret
+JWT_ACCESS_SECRET=your_access_secret
+JWT_REFRESH_SECRET=your_refresh_secret
 BASE_URL=http://localhost:5000
-FRONTEND_URL=http://localhost:5173
+CLIENT_URL=http://localhost:5173
 ```
 
-Start the backend development server:
+Start backend:
 
 ```bash
 npm run dev
 ```
 
-### 3. Frontend Configuration & Setup
+### 3. Frontend Setup
 
 ```bash
 cd ../frontend
 npm install
-cp .env.example .env
 ```
 
-Configure `frontend/.env`:
+Create `frontend/.env`:
 
 ```env
-VITE_API_URL=http://localhost:5000/api/v1
-VITE_SHORT_BASE_URL=http://localhost:5000/r
+VITE_API_URL=http://localhost:5000/api
+VITE_BASE_URL=http://localhost:5000
 ```
 
-Start the frontend development server:
+Start frontend:
 
 ```bash
 npm run dev
 ```
-
-The application will be running at `http://localhost:5173`.
-
----
-
-## API Reference Highlights
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `POST` | `/api/v1/auth/register` | Register a new user account | No |
-| `POST` | `/api/v1/auth/login` | Authenticate user & receive tokens | No |
-| `POST` | `/api/v1/urls/shorten` | Create a new short URL | Optional (JWT / API Key) |
-| `GET` | `/api/v1/urls` | Retrieve paginated user URLs with filters | Yes (JWT / API Key) |
-| `GET` | `/r/:shortCode` | Redirect to original target URL | No |
-| `POST` | `/api/v1/urls/verify-password` | Verify password for protected link | No |
-| `GET` | `/api/v1/analytics/url/:id` | Get aggregated analytics for a specific link | Yes (JWT) |
-| `GET` | `/api/v1/analytics/overview` | Get overview metrics across all user links | Yes (JWT) |
-| `POST` | `/api/v1/api-keys` | Generate a new developer API key | Yes (JWT) |
-| `GET` | `/api/v1/admin/stats` | Retrieve platform-wide administration stats | Yes (Admin) |
 
 ---
 
 ## Author
 
-**Sparsh Chauhan**
-- GitHub: [@Sparsh88](https://github.com/Sparsh88)
-- LinkedIn: [sparshchauhan08](https://linkedin.com/in/sparshchauhan08)
+**Sparsh Chauhan**  
+*Computer Science & Engineering Student | Full Stack Developer*
+
+- **Portfolio:** [portfolio-flame-rho-29.vercel.app](https://portfolio-flame-rho-29.vercel.app/)
+- **GitHub:** [@Sparsh88](https://github.com/Sparsh88)
+- **LinkedIn:** [linkedin.com/in/sparshchauhan08](https://linkedin.com/in/sparshchauhan08)
+- **Email:** [sparshchauhan050@gmail.com](mailto:sparshchauhan050@gmail.com)
