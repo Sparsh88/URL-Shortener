@@ -68,17 +68,17 @@ graph TD
     User["Client Browser / Developer API"]
     Vercel["Frontend (Vercel SPA - React + Vite)"]
     Render["Backend REST API & Redirect Engine (Render - Express + Node.js)"]
-    Mongo[("MongoDB Atlas (Users, URLs, Analytics, API Keys)")]
+    Mongo[("MongoDB Atlas")]
     GeoIP["GeoIP-Lite & UserAgent Parser"]
     SMTP["SMTP Mailer (Nodemailer)"]
 
-    User -->|Access Dashboard & UI| Vercel
-    User -->|Resolve Short URL (/:shortCode)| Render
-    User -->|API Requests (x-api-key)| Render
-    Vercel -->|REST API Calls (Bearer Token)| Render
-    Render -->|CRUD & Aggregate Pipelines| Mongo
-    Render -->|Parse IP & Client Header| GeoIP
-    Render -->|Auth & Verification Mails| SMTP
+    User -->|"Access Dashboard & UI"| Vercel
+    User -->|"Resolve Short URL (/:shortCode)"| Render
+    User -->|"API Requests (x-api-key)"| Render
+    Vercel -->|"REST API Calls (Bearer Token)"| Render
+    Render -->|"CRUD & Aggregate Pipelines"| Mongo
+    Render -->|"Parse IP & Client Header"| GeoIP
+    Render -->|"Auth & Verification Mails"| SMTP
 ```
 
 ---
