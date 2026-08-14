@@ -1,26 +1,37 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 
-const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_PORT === 465,
-  auth: {
-    user: env.SMTP_USER,
-    pass: env.SMTP_PASS,
-  },
-});
+let transporter: nodemailer.Transporter | null = null;
+
+const getTransporter = (): nodemailer.Transporter | null => {
+  if (!env.SMTP_USER || !env.SMTP_PASS) {
+    return null;
+  }
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_PORT === 465,
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
+      },
+    });
+  }
+  return transporter;
+};
 
 export const sendVerificationEmail = async (email: string, token: string): Promise<void> => {
   const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${token}`;
   console.log(`[Email Service] Verification link for ${email}: ${verifyUrl}`);
 
-  if (!env.SMTP_USER || !env.SMTP_PASS) {
+  const mailer = getTransporter();
+  if (!mailer) {
     return;
   }
 
   try {
-    await transporter.sendMail({
+    await mailer.sendMail({
       from: env.SMTP_FROM,
       to: email,
       subject: 'Verify your LinkForge Account',
@@ -42,12 +53,13 @@ export const sendResetPasswordEmail = async (email: string, token: string): Prom
   const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
   console.log(`[Email Service] Password Reset link for ${email}: ${resetUrl}`);
 
-  if (!env.SMTP_USER || !env.SMTP_PASS) {
+  const mailer = getTransporter();
+  if (!mailer) {
     return;
   }
 
   try {
-    await transporter.sendMail({
+    await mailer.sendMail({
       from: env.SMTP_FROM,
       to: email,
       subject: 'Reset your LinkForge Password',
@@ -64,3 +76,4 @@ export const sendResetPasswordEmail = async (email: string, token: string): Prom
     console.error(`[Email Service] Failed to send reset email: ${(err as Error).message}`);
   }
 };
+

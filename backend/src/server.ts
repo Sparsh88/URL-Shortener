@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import cookieParser from 'cookie-parser';
+import mongoose from 'mongoose';
 import { env } from './config/env';
 import { connectDB } from './config/db';
 import { seedAdminUser } from './utils/seedAdmin';
@@ -14,11 +15,38 @@ import redirectRoutes from './routes/redirectRoutes';
 const app = express();
 
 // 1. Connect Database & Seed Admin
-connectDB().then(() => {
-  seedAdminUser();
-});
+connectDB()
+  .then(() => {
+    seedAdminUser();
+  })
+  .catch((err) => {
+    console.error('[Startup Error] Database connection or seeding failed:', err.message);
+  });
 
-// 2. Core Middlewares
+// 2. Health Check Endpoints (Mounted before rate limiter & DB guards to guarantee 200 OK for Render probes)
+const healthHandler = (req: Request, res: Response) => {
+  const dbStatus =
+    mongoose.connection.readyState === 1
+      ? 'connected'
+      : mongoose.connection.readyState === 2
+      ? 'connecting'
+      : 'disconnected';
+
+  res.status(200).json({
+    status: 'ok',
+    message: 'API is running',
+    app: 'LinkForge API Engine',
+    version: '1.0.0',
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+app.get('/api/v1/health', healthHandler);
+
+// 3. Core Middlewares
 app.set('etag', 'strong'); // Enable HTTP 304 Not Modified caching support
 
 app.use(
@@ -46,24 +74,16 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(globalLimiter);
 
-// Cold-Start & Serverless Database Guard: Ensure DB connection is active before processing requests
+// Cold-Start Database Guard: Ensure DB connection is active before processing data requests
 app.use(async (req: Request, res: Response, next) => {
   try {
-    await connectDB();
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
     next();
   } catch (err) {
     next(err);
   }
-});
-
-// 3. Health Check
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'healthy',
-    app: 'LinkForge API Engine',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-  });
 });
 
 // 4. API Routes (/api/v1)
@@ -77,13 +97,31 @@ app.use('/', redirectRoutes);
 // 6. Global Error Handler
 app.use(errorHandler);
 
-const PORT = env.PORT || 5000;
-app.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || Number(env.PORT) || 5000;
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`==================================================`);
   console.log(`⚡ LinkForge Backend running on port ${PORT}`);
   console.log(`🌐 Base URL: ${env.BASE_URL}`);
   console.log(`🚀 Mode: ${env.NODE_ENV}`);
   console.log(`==================================================`);
 });
+
+// Graceful Shutdown Handling
+const handleGracefulShutdown = (signal: string) => {
+  console.log(`\n[Server] Received ${signal}. Starting graceful shutdown...`);
+  server.close(async () => {
+    console.log('[Server] HTTP server closed.');
+    try {
+      await mongoose.connection.close(false);
+      console.log('[MongoDB] Connection closed.');
+    } catch (err) {
+      console.error('[MongoDB] Error during disconnect:', err);
+    }
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
 
 export default app;

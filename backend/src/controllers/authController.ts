@@ -257,7 +257,7 @@ export const me = async (req: AuthenticatedRequest, res: Response): Promise<any>
     if (!req.user) return sendError(res, 'Unauthorized', 401);
 
     const user = await User.findById(req.user.userId);
-    if (!user) return sendError(res, 'User not found', 44);
+    if (!user) return sendError(res, 'User not found', 404);
 
     return sendSuccess(res, {
       user: {
