@@ -46,6 +46,19 @@ app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 app.get('/api/v1/health', healthHandler);
 
+// Root Welcome / API Status
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    app: 'LinkForge API Engine',
+    status: 'online',
+    version: '1.0.0',
+    health: '/health',
+    api: '/api/v1',
+    frontend: env.FRONTEND_URL || 'https://url-shortener-blue-phi.vercel.app',
+    message: 'Welcome to the LinkForge Backend REST API.',
+  });
+});
+
 // 3. Core Middlewares
 app.set('etag', 'strong'); // Enable HTTP 304 Not Modified caching support
 
