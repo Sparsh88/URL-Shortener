@@ -110,8 +110,9 @@ export const toggleUserSuspension = async (req: any, res: Response): Promise<any
     const user = await User.findById(id);
 
     if (!user) return sendError(res, 'User not found', 404);
-    if (user.role === 'admin') {
-      return sendError(res, 'Cannot suspend an admin user', 400);
+    const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
+    if (user.role === 'admin' || user.email.toLowerCase() === adminEmail) {
+      return sendError(res, 'Cannot suspend the system administrator', 400);
     }
 
     user.isSuspended = !user.isSuspended;
@@ -139,6 +140,16 @@ export const updateUserRole = async (req: any, res: Response): Promise<any> => {
     const user = await User.findById(id);
     if (!user) return sendError(res, 'User not found', 404);
 
+    const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
+
+    if (user.email.toLowerCase() === adminEmail && role !== 'admin') {
+      return sendError(res, 'Cannot demote the primary system administrator', 400);
+    }
+
+    if (role === 'admin' && user.email.toLowerCase() !== adminEmail) {
+      return sendError(res, 'Access restriction: Admin privileges are exclusively reserved for sparshchauhan050@gmail.com', 403);
+    }
+
     user.role = role;
     await user.save();
 
@@ -153,7 +164,11 @@ export const deleteUser = async (req: any, res: Response): Promise<any> => {
     const { id } = req.params;
     const user = await User.findById(id);
     if (!user) return sendError(res, 'User not found', 404);
-    if (user.role === 'admin') return sendError(res, 'Cannot delete an admin user', 400);
+    
+    const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
+    if (user.role === 'admin' || user.email.toLowerCase() === adminEmail) {
+      return sendError(res, 'Cannot delete the system administrator', 400);
+    }
 
     // Delete user's URLs & Analytics
     const userUrls = await Url.find({ userId: id });
@@ -168,6 +183,7 @@ export const deleteUser = async (req: any, res: Response): Promise<any> => {
     return sendError(res, (error as Error).message, 500);
   }
 };
+
 
 export const toggleUserVerification = async (req: any, res: Response): Promise<any> => {
   try {

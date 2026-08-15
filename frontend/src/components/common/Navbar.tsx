@@ -36,8 +36,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCreateModal }) => {
     { name: 'Dashboard', path: '/dashboard', icon: Link2, show: isAuthenticated },
     { name: 'Analytics', path: '/analytics', icon: BarChart3, show: isAuthenticated },
     { name: 'Developer API', path: '/developer', icon: Code2, show: isAuthenticated },
-    { name: 'Admin Panel', path: '/admin', icon: Shield, show: isAuthenticated && user?.role === 'admin' },
+    { name: 'Admin Panel', path: '/admin', icon: Shield, show: isAuthenticated && user?.role === 'admin' && user?.email?.toLowerCase() === 'sparshchauhan050@gmail.com' },
   ];
+
 
   return (
     <nav className="sticky top-0 z-40 glass-panel border-b border-slate-200 dark:border-zinc-800 bg-white/80 dark:bg-black/90 backdrop-blur-md">

@@ -26,6 +26,7 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
         {users.map((user) => {
           const userId = user._id || user.id || '';
           const isSuspended = (user as any).isSuspended;
+          const isPrimaryAdmin = user.email?.toLowerCase() === 'sparshchauhan050@gmail.com';
 
           return (
             <div
@@ -39,9 +40,16 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
                     {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div className="overflow-hidden">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm truncate">
-                      {user.name}
-                    </p>
+                    <div className="flex items-center space-x-1.5">
+                      <p className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                        {user.name}
+                      </p>
+                      {isPrimaryAdmin && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                          Owner
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{user.email}</p>
                   </div>
                 </div>
@@ -61,14 +69,16 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 text-xs">
                 <div className="flex items-center space-x-2">
                   <span className="font-semibold text-slate-500">Role:</span>
-                  <select
-                    value={user.role}
-                    onChange={(e) => onUpdateRole(userId, e.target.value as 'user' | 'admin')}
-                    className="px-2.5 py-1 rounded-lg glass-input text-xs font-semibold cursor-pointer"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  {isPrimaryAdmin ? (
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center space-x-1">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Admin</span>
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-lg glass-input text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      User
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -102,8 +112,11 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
 
                 <button
                   onClick={() => onToggleSuspend(userId)}
+                  disabled={isPrimaryAdmin}
                   className={`py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 transition-all ${
-                    isSuspended
+                    isPrimaryAdmin
+                      ? 'opacity-40 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400'
+                      : isSuspended
                       ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                       : 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
                   }`}
@@ -114,7 +127,12 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
 
                 <button
                   onClick={() => onDeleteUser(userId)}
-                  className="py-1.5 px-2 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center space-x-1 transition-colors"
+                  disabled={isPrimaryAdmin}
+                  className={`py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 transition-colors ${
+                    isPrimaryAdmin
+                      ? 'opacity-40 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400'
+                      : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                  }`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Delete</span>
@@ -123,6 +141,7 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
             </div>
           );
         })}
+
       </div>
 
       {/* Desktop Table Layout (hidden on mobile, visible on desktop) */}
@@ -142,6 +161,7 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
               {users.map((user) => {
                 const userId = user._id || user.id || '';
                 const isSuspended = (user as any).isSuspended;
+                const isPrimaryAdmin = user.email?.toLowerCase() === 'sparshchauhan050@gmail.com';
 
                 return (
                   <tr key={userId} className="hover:bg-slate-100/70 dark:hover:bg-slate-800/40 transition-colors">
@@ -151,28 +171,37 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
                           {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <div>
-                          <button
-                            onClick={() => onInspectUser && onInspectUser(userId)}
-                            className="font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 text-left transition-colors flex items-center space-x-1 group"
-                            title="View user details & links"
-                          >
-                            <span>{user.name}</span>
-                            <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-brand-500" />
-                          </button>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              onClick={() => onInspectUser && onInspectUser(userId)}
+                              className="font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 text-left transition-colors flex items-center space-x-1 group"
+                              title="View user details & links"
+                            >
+                              <span>{user.name}</span>
+                              <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-brand-500" />
+                            </button>
+                            {isPrimaryAdmin && (
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                                Owner
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-slate-600 dark:text-slate-400">{user.email}</p>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-4 px-4">
-                      <select
-                        value={user.role}
-                        onChange={(e) => onUpdateRole(userId, e.target.value as 'user' | 'admin')}
-                        className="px-2.5 py-1 rounded-lg glass-input text-xs font-semibold cursor-pointer"
-                      >
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      {isPrimaryAdmin ? (
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 inline-flex items-center space-x-1">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>Admin</span>
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg glass-input text-xs font-semibold text-slate-700 dark:text-slate-300 inline-block">
+                          User
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-4 px-4">
@@ -230,20 +259,28 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
 
                         <button
                           onClick={() => onToggleSuspend(userId)}
+                          disabled={isPrimaryAdmin}
                           className={`p-1.5 rounded-lg transition-colors ${
-                            isSuspended
+                            isPrimaryAdmin
+                              ? 'opacity-30 cursor-not-allowed text-slate-400'
+                              : isSuspended
                               ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/10'
                               : 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/10'
                           }`}
-                          title={isSuspended ? 'Activate User' : 'Suspend User'}
+                          title={isPrimaryAdmin ? 'Primary Admin cannot be suspended' : isSuspended ? 'Activate User' : 'Suspend User'}
                         >
                           <Ban className="w-4 h-4" />
                         </button>
 
                         <button
                           onClick={() => onDeleteUser(userId)}
-                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-colors"
-                          title="Delete User"
+                          disabled={isPrimaryAdmin}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            isPrimaryAdmin
+                              ? 'opacity-30 cursor-not-allowed text-slate-400'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10'
+                          }`}
+                          title={isPrimaryAdmin ? 'Primary Admin cannot be deleted' : 'Delete User'}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -252,6 +289,7 @@ export const UserManagementTable: React.FC<UserManagementTableProps> = ({
                   </tr>
                 );
               })}
+
             </tbody>
           </table>
         </div>

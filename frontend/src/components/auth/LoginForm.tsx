@@ -51,20 +51,21 @@ export const LoginForm: React.FC = () => {
 
       const res = await authService.login(payload);
       if (res.success) {
-        if (loginType === 'admin' && res.data.user.role !== 'admin') {
-          showToast('Access Denied: Only Admin accounts can log in via the Admin Portal.', 'error');
+        if (loginType === 'admin' && (res.data.user.role !== 'admin' || res.data.user.email?.toLowerCase() !== 'sparshchauhan050@gmail.com')) {
+          showToast('Access Denied: Only authorized System Administrator can access the Admin Portal.', 'error');
           setLoading(false);
           return;
         }
 
         setAuth(res.data.user, res.data.accessToken);
         showToast(`Logged in successfully as ${res.data.user.name}`, 'success');
-        if (res.data.user.role === 'admin') {
+        if (res.data.user.role === 'admin' && res.data.user.email?.toLowerCase() === 'sparshchauhan050@gmail.com') {
           navigate('/admin');
         } else {
           navigate('/dashboard');
         }
       }
+
     } catch (err: any) {
       showToast(
         err.response?.data?.error || 'Login failed. Please check credentials.',
@@ -127,9 +128,10 @@ export const LoginForm: React.FC = () => {
             <input
               {...register('email')}
               type="email"
-              placeholder={loginType === 'admin' ? 'admin@example.com' : 'you@example.com'}
+              placeholder={loginType === 'admin' ? 'sparshchauhan050@gmail.com' : 'you@example.com'}
               className="w-full pl-11 pr-4 py-2.5 rounded-xl glass-input text-sm"
             />
+
           </div>
           {errors.email && <p className="text-xs text-rose-500 mt-1">{errors.email.message}</p>}
         </div>

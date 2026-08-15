@@ -41,7 +41,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
     return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && user?.role !== 'admin') {
+  if (adminOnly && (user?.role !== 'admin' || user?.email?.toLowerCase() !== 'sparshchauhan050@gmail.com')) {
     return <Navigate to="/dashboard" replace />;
   }
 

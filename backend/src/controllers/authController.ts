@@ -27,9 +27,9 @@ export const register = async (req: any, res: Response): Promise<any> => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-    // If first user, make admin
-    const userCount = await User.countDocuments();
-    const role = userCount === 0 ? 'admin' : 'user';
+    // Only the designated admin email can have admin role
+    const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
+    const role = email.toLowerCase() === adminEmail ? 'admin' : 'user';
 
     const user = await User.create({
       name,
@@ -81,9 +81,13 @@ export const login = async (req: any, res: Response): Promise<any> => {
       return sendError(res, 'Invalid email or password', 401);
     }
 
-    if (requiredRole && requiredRole === 'admin' && user.role !== 'admin') {
-      return sendError(res, 'Access Denied: Administrator privileges required to log in via Admin Portal.', 403);
+    const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
+    if (requiredRole && requiredRole === 'admin') {
+      if (user.role !== 'admin' || user.email.toLowerCase() !== adminEmail) {
+        return sendError(res, 'Access Denied: Administrator privileges required to log in via Admin Portal.', 403);
+      }
     }
+
 
     const tokenPayload = {
       userId: user._id.toString(),

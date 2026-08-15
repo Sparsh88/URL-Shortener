@@ -18,4 +18,6 @@ export const env = {
   SMTP_FROM: process.env.SMTP_FROM || 'LinkForge <no-reply@linkforge.io>',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   BASE_URL: process.env.BASE_URL || 'http://localhost:5000',
+  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase(),
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'Sp@080806',
 };

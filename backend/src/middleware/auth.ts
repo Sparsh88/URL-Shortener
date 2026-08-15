@@ -59,9 +59,13 @@ export const requireRole = (role: 'user' | 'admin') => {
     if (!req.user) {
       return sendError(res, 'Unauthorized', 401);
     }
-    if (role === 'admin' && req.user.role !== 'admin') {
-      return sendError(res, 'Forbidden: Admin access required', 403);
+    const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
+    if (role === 'admin') {
+      if (req.user.role !== 'admin' || req.user.email.toLowerCase() !== adminEmail) {
+        return sendError(res, 'Forbidden: Admin access restricted to system administrator only', 403);
+      }
     }
     next();
   };
 };
+
