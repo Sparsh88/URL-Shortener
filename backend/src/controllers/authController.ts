@@ -82,9 +82,15 @@ export const login = async (req: any, res: Response): Promise<any> => {
     }
 
     const adminEmail = (process.env.ADMIN_EMAIL || 'sparshchauhan050@gmail.com').toLowerCase();
-    if (requiredRole && requiredRole === 'admin') {
-      if (user.role !== 'admin' || user.email.toLowerCase() !== adminEmail) {
+    const isAdminUser = user.role === 'admin' || user.email.toLowerCase() === adminEmail;
+
+    if (requiredRole === 'admin') {
+      if (!isAdminUser || user.role !== 'admin' || user.email.toLowerCase() !== adminEmail) {
         return sendError(res, 'Access Denied: Administrator privileges required to log in via Admin Portal.', 403);
+      }
+    } else if (requiredRole === 'user') {
+      if (isAdminUser) {
+        return sendError(res, 'Admin accounts cannot log in through User Login. Please switch to the Admin Login tab.', 403);
       }
     }
 

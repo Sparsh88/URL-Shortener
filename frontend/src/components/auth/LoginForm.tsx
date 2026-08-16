@@ -43,23 +43,28 @@ export const LoginForm: React.FC = () => {
       const payload: any = {
         email: data.email,
         password: data.password,
+        requiredRole: loginType,
       };
-
-      if (loginType === 'admin') {
-        payload.requiredRole = 'admin';
-      }
 
       const res = await authService.login(payload);
       if (res.success) {
-        if (loginType === 'admin' && (res.data.user.role !== 'admin' || res.data.user.email?.toLowerCase() !== 'sparshchauhan050@gmail.com')) {
+        const isAdmin = res.data.user.role === 'admin' || res.data.user.email?.toLowerCase() === 'sparshchauhan050@gmail.com';
+
+        if (loginType === 'admin' && !isAdmin) {
           showToast('Access Denied: Only authorized System Administrator can access the Admin Portal.', 'error');
+          setLoading(false);
+          return;
+        }
+
+        if (loginType === 'user' && isAdmin) {
+          showToast('Admin accounts cannot log in through User Login. Please switch to the Admin Login tab.', 'error');
           setLoading(false);
           return;
         }
 
         setAuth(res.data.user, res.data.accessToken);
         showToast(`Logged in successfully as ${res.data.user.name}`, 'success');
-        if (res.data.user.role === 'admin' && res.data.user.email?.toLowerCase() === 'sparshchauhan050@gmail.com') {
+        if (isAdmin && loginType === 'admin') {
           navigate('/admin');
         } else {
           navigate('/dashboard');
