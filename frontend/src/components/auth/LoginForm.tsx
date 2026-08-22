@@ -142,14 +142,9 @@ export const LoginForm: React.FC = () => {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Password
-            </label>
-            <Link to="/forgot-password" className="text-xs text-brand-500 dark:text-brand-400 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            Password
+          </label>
           <div className="relative">
             <Lock className="w-5 h-5 absolute left-3.5 top-3 text-slate-400" />
             <input
